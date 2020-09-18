@@ -1,77 +1,52 @@
 package com.val.riazanski;
 
+import java.util.Stack;
+
 public class ExtendStringBuilder {
     //fields
-    StringBuilder stringBuilder;
+    private final StringBuilder stringBuilder;
+    private final Stack<Runnable> history = new Stack<>();
     //constructors
     public ExtendStringBuilder(StringBuilder stringBuilder) {
         this.stringBuilder = stringBuilder;
     }
     //methods
-    public ExtendStringBuilder delete(UnDeleteCommand command, int start, int end) {
+    public void delete(int start, int end) {
         String deleted = stringBuilder.substring(start, end);
-        stringBuilder.delete(start, end);
-        command.setAction(() ->  stringBuilder.insert(start,deleted));
-        Application.history.push(command);
-        return this;
+        this.stringBuilder.delete(start, end);
+        this.history.push(() -> stringBuilder.insert(start, deleted));
     }
-    public ExtendStringBuilder append(UnAppend command, String str) {
+    public void append(String str) {
         stringBuilder.append(str);
-        command.setAction(() -> {
-        int end = stringBuilder.length();
-        int start = end - str.length();
-        stringBuilder.delete(start, end);
-    } );
-        Application.history.push(command);
-        return this;
-
+        this.history.push(() -> {
+            int end = stringBuilder.length();
+            int start = end - str.length();
+            stringBuilder.delete(start, end);
+        });
     }
-    public ExtendStringBuilder reverse(UnReverse command) {
+    public void reverse() {
         this.stringBuilder.reverse();
-        command.setAction(() -> stringBuilder.reverse());
-        Application.history.push(command);
-        return this;
+        history.push(() -> stringBuilder.reverse());
     }
-
-    public ExtendStringBuilder insert(UnInsert command, int start, String str) {
-        this.stringBuilder.insert(start,str);
-        Application.history.push(command);
-        command.setAction(() -> stringBuilder.delete(start, start + str.length()));
-        return this;
+    public void insert(int start, String str) {
+        this.stringBuilder.insert(start, str);
+        this.history.push(() -> stringBuilder.delete(start, start + str.length()));
     }
-
-    public ExtendStringBuilder replace(UnReplace command, int start, int end, String str) {
-        String replaced = stringBuilder.substring(start,end);
+    public void replace(int start, int end, String str) {
+        String replaced = stringBuilder.substring(start, end);
         this.stringBuilder.replace(start, end, str);
-        command.setAction(() -> {
+        history.push(() -> {
             if ((str != null) && (start != 0) && (end != 0)) {
                 stringBuilder.replace(start, start + str.length(), replaced);
             }
-        });
-        Application.history.push(command);
-        return this;
+        }
+        );
+    }
+    public void unDo() {
+        this.history.pop().run();
     }
     @Override
     public String toString() {
         return this.stringBuilder.toString();
-    }
-    public ExtendStringBuilder delete(int start, int end) {
-        String deleted = stringBuilder.substring(start, end);
-        stringBuilder.delete(start, end);
-        return this;
-    }
-    public ExtendStringBuilder reverse() {
-        stringBuilder.reverse();
-        return this;
-    }
-    public StringBuilder insert(int start, String str) {
-        return this.stringBuilder.insert(start, str);
-    }
-    public int length() {
-        return this.stringBuilder.length();
-    }
-    public  ExtendStringBuilder replace(int start, int end, String str) {
-        this.stringBuilder.replace(start, end, str);
-        return this;
     }
 }
